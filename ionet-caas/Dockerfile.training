@@ -1,0 +1,56 @@
+# Dockerfile for nanochat Training on IONet CaaS
+# Base image: CUDA 12.4.1 with cuDNN on Ubuntu 22.04
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV OMP_NUM_THREADS=1
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set working directory
+WORKDIR /workspace
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    wget \
+    unzip \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    ca-certificates \
+    python3 \
+    python3-pip \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symlinks for python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip
+RUN python3 -m pip install --upgrade pip setuptools wheel
+
+# Copy the training wrapper script from the repo
+# This script wraps speedrun.sh with R2 upload and verification checks
+COPY train_and_upload_simple.sh /workspace/train_and_upload.sh
+RUN chmod +x /workspace/train_and_upload.sh
+
+# Pre-install some common dependencies to speed up startup
+RUN pip3 install --no-cache-dir \
+    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124 \
+    awscli \
+    boto3
+
+# Create cache directory
+RUN mkdir -p /root/.cache/nanochat
+
+# Health check - verify GPU is accessible
+RUN nvidia-smi || echo "Warning: nvidia-smi not available during build"
+
+# Set entrypoint to the training script
+ENTRYPOINT ["/bin/bash", "/workspace/train_and_upload.sh"]
+
+# Default command (can be overridden)
+CMD []

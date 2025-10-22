@@ -1,0 +1,25 @@
+{
+  "container_config": {
+    "replica_count": 1,
+    "env_variables": {
+      "WANDB_RUN": "ionet-speedrun",
+      "KEEP_ALIVE": "false"
+    },
+    "secret_env_variables": {
+      "R2_ACCESS_KEY_ID": "YOUR_R2_ACCESS_KEY_ID",
+      "R2_SECRET_ACCESS_KEY": "YOUR_R2_SECRET_ACCESS_KEY",
+      "R2_ENDPOINT_URL": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com",
+      "R2_BUCKET_NAME": "llm-exploration",
+      "WANDB_API_KEY": "YOUR_WANDB_API_KEY_OPTIONAL"
+    },
+    "entrypoint": ["/bin/bash"],
+    "args": ["/workspace/train_and_upload.sh"],
+    "command": "",
+    "traffic_port": 8000
+  },
+  "registry_config": {
+    "image_url": "YOUR_DOCKER_REGISTRY/nanochat-training:latest",
+    "registry_username": "YOUR_DOCKER_USERNAME",
+    "registry_secret": "YOUR_DOCKER_PASSWORD_OR_TOKEN"
+  }
+}
