@@ -1,0 +1,62 @@
+# Minimal Dockerfile for nanochat Training on IONet CaaS
+# Base image: CUDA 12.4.1 with cuDNN on Ubuntu 22.04
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
+
+# Set working directory
+WORKDIR /workspace
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    wget \
+    unzip \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    ca-certificates \
+    python3 \
+    python3-pip \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symlinks for python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip
+RUN python3 -m pip install --upgrade pip setuptools wheel
+
+# Install uv package manager (Python package installer)
+# Using standalone installation to avoid permission issues
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    uv --version
+
+# Install Rust (needed for tokenizer)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . "$HOME/.cargo/env" && \
+    rustc --version
+
+# Install AWS CLI and boto3 for R2 uploads
+RUN pip3 install --no-cache-dir awscli boto3
+
+# Create cache directory
+RUN mkdir -p /root/.cache/nanochat
+
+# Verify all installations
+RUN echo "=== Installation Verification ===" && \
+    python3 --version && \
+    pip3 --version && \
+    uv --version && \
+    rustc --version && \
+    aws --version
+
+# Default entrypoint - will be overridden by deployment
+ENTRYPOINT ["/bin/bash"]
+
+# Default command
+CMD ["-c", "echo 'Container ready. Waiting for script...' && sleep infinity"]
